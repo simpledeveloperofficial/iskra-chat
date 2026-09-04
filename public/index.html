@@ -4,20 +4,23 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Искра</title>
+<link rel="icon" type="image/png" href="/logo.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <style>
   :root {
     --bg: #ffffff;
-    --bg-elevated: #f7f7f8;
-    --border: #e6e6ea;
-    --text: #1b1c1f;
-    --text-muted: #6b6d76;
-    --accent: #4a5cff;
-    --accent-ink: #ffffff;
-    --accent-soft: #eef0ff;
-    --bubble-user: #f0f1f5;
-    --code-bg: #1b1c1f;
+    --sidebar-bg: #f9f9f9;
+    --bg-elevated: #f4f4f5;
+    --hover: #ececee;
+    --border: #e6e6e6;
+    --text: #0d0d0d;
+    --text-muted: #6e6e78;
+    --accent: #10a37f;
+    --send-bg: #0d0d0d;
+    --send-ink: #ffffff;
+    --bubble-user: #f4f4f5;
+    --code-bg: #0d0d0d;
     --code-text: #e6e6ea;
     --danger: #c0362c;
     --danger-bg: #fbeae8;
@@ -25,32 +28,36 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #17181c;
-      --bg-elevated: #1f2024;
-      --border: #2c2d33;
-      --text: #ececef;
-      --text-muted: #93949e;
-      --accent: #7b89ff;
-      --accent-ink: #14152b;
-      --accent-soft: #23264a;
-      --bubble-user: #26272d;
-      --code-bg: #0e0f12;
+      --bg: #212121;
+      --sidebar-bg: #171717;
+      --bg-elevated: #2a2a2a;
+      --hover: #2f2f2f;
+      --border: #2f2f2f;
+      --text: #ececec;
+      --text-muted: #8e8ea0;
+      --accent: #19c37d;
+      --send-bg: #ececec;
+      --send-ink: #0d0d0d;
+      --bubble-user: #2f2f2f;
+      --code-bg: #0a0a0a;
       --code-text: #e6e6ea;
       --danger: #ff8a7a;
       --danger-bg: #3a2220;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #17181c;
-    --bg-elevated: #1f2024;
-    --border: #2c2d33;
-    --text: #ececef;
-    --text-muted: #93949e;
-    --accent: #7b89ff;
-    --accent-ink: #14152b;
-    --accent-soft: #23264a;
-    --bubble-user: #26272d;
-    --code-bg: #0e0f12;
+    --bg: #212121;
+    --sidebar-bg: #171717;
+    --bg-elevated: #2a2a2a;
+    --hover: #2f2f2f;
+    --border: #2f2f2f;
+    --text: #ececec;
+    --text-muted: #8e8ea0;
+    --accent: #19c37d;
+    --send-bg: #ececec;
+    --send-ink: #0d0d0d;
+    --bubble-user: #2f2f2f;
+    --code-bg: #0a0a0a;
     --code-text: #e6e6ea;
     --danger: #ff8a7a;
     --danger-bg: #3a2220;
@@ -67,67 +74,144 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .app {
-    max-width: 780px;
-    margin: 0 auto;
+  .shell {
     height: 100dvh;
     display: flex;
-    flex-direction: column;
+    background: var(--bg);
   }
 
-  header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 20px;
+  /* --- боковая панель --- */
+  .sidebar {
+    width: 268px;
     flex-shrink: 0;
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.18s ease;
+    overflow: hidden;
   }
-  header .spacer { flex: 1; }
+  .sidebar.collapsed { margin-left: -268px; }
 
-  .icon-btn {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    border: 1px solid transparent;
+  .sidebar-top { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
+
+  .new-chat {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+  }
+  .new-chat:hover { background: var(--hover); }
+  .new-chat svg { width: 17px; height: 17px; flex-shrink: 0; }
+
+  .sidebar-search {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .sidebar-search svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .sidebar-search input {
+    border: none; background: transparent; outline: none;
+    font-family: inherit; font-size: 13px; color: var(--text);
+    width: 100%;
+  }
+  .sidebar-search input::placeholder { color: var(--text-muted); }
+
+  .sidebar-list { flex: 1; overflow-y: auto; padding: 4px 12px 12px; }
+  .group-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 14px 8px 6px;
+  }
+  .chat-item {
+    position: relative;
+    display: flex; align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  .chat-item:hover { background: var(--hover); }
+  .chat-item.active { background: var(--bg-elevated); }
+  .chat-item .title {
+    flex: 1; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .chat-item .del {
+    flex-shrink: 0;
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    border: none;
     background: transparent;
     color: var(--text-muted);
-    display: flex; align-items: center; justify-content: center;
+    display: none;
+    align-items: center; justify-content: center;
     cursor: pointer;
-    flex-shrink: 0;
   }
-  .icon-btn:hover { background: var(--bg-elevated); color: var(--text); }
-  .icon-btn svg { width: 19px; height: 19px; }
+  .chat-item:hover .del { display: flex; }
+  .chat-item .del:hover { background: var(--border); color: var(--danger); }
+  .chat-item .del svg { width: 13px; height: 13px; }
 
-  .profile-chip {
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--accent-soft);
-    color: var(--accent);
+  .sidebar-empty { padding: 10px 8px; color: var(--text-muted); font-size: 12.5px; }
+
+  .sidebar-bottom { padding: 10px; border-top: 1px solid var(--border); }
+  .account-row {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%;
+    padding: 8px;
+    border-radius: 10px;
     border: none;
-    font-weight: 700;
-    font-size: 13px;
+    background: transparent;
     cursor: pointer;
+    text-align: left;
+  }
+  .account-row:hover { background: var(--hover); }
+  .account-row .chip {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 700; font-size: 12px;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .profile-chip:hover { filter: brightness(0.97); }
+  .account-row .who { flex: 1; min-width: 0; }
+  .account-row .who .name { font-size: 13.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .account-row .who .sub { font-size: 11.5px; color: var(--text-muted); }
+  .account-row svg.gear { width: 17px; height: 17px; color: var(--text-muted); flex-shrink: 0; }
 
-  .mark {
-    width: 30px;
-    height: 30px;
-    border-radius: 9px;
-    background: linear-gradient(135deg, var(--accent), #8f7bff);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* --- главная колонка --- */
+  .main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%; }
+
+  .topbar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px;
     flex-shrink: 0;
   }
-  .mark svg { width: 16px; height: 16px; }
-
-  header h1 {
-    font-size: 16px;
-    font-weight: 700;
-    margin: 0;
-    letter-spacing: -0.01em;
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
   }
+  .icon-btn:hover { background: var(--hover); }
+  .icon-btn svg { width: 19px; height: 19px; }
+  .topbar .title { font-size: 15px; font-weight: 700; }
+  .topbar .title-mark { width: 22px; height: 22px; object-fit: contain; margin-left: 2px; }
 
   main {
     flex: 1;
@@ -143,23 +227,21 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: 28px;
+    gap: 26px;
     padding-bottom: 60px;
   }
   .welcome .mark-lg {
-    width: 56px; height: 56px; border-radius: 16px;
-    background: linear-gradient(135deg, var(--accent), #8f7bff);
+    width: 64px; height: 64px;
     display: flex; align-items: center; justify-content: center;
   }
-  .welcome .mark-lg svg { width: 30px; height: 30px; }
+  .welcome .mark-lg img { width: 100%; height: 100%; object-fit: contain; }
   .welcome h2 {
-    font-size: 26px;
-    font-weight: 800;
+    font-size: 24px;
+    font-weight: 700;
     margin: 0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     text-wrap: balance;
   }
-  .welcome p { margin: -16px 0 0; color: var(--text-muted); font-size: 14.5px; }
 
   .suggestions {
     display: grid;
@@ -180,46 +262,41 @@
     cursor: pointer;
     line-height: 1.4;
   }
-  .suggestion:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .suggestion:hover { background: var(--hover); }
   .suggestion .emoji { font-size: 16px; display: block; margin-bottom: 6px; }
 
-  /* --- сообщения --- */
+  /* --- сообщения (без пузырей и аватаров у ассистента — как в ChatGPT) --- */
   #thread {
+    max-width: 760px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 26px;
     padding: 24px 0 20px;
   }
 
-  .msg { display: flex; gap: 12px; animation: rise 0.25s ease-out; }
+  .msg { display: flex; animation: rise 0.2s ease-out; }
   @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .msg { animation: none; } }
 
   .msg.user { justify-content: flex-end; }
   .msg.user .bubble {
     background: var(--bubble-user);
-    border-radius: 18px 18px 4px 18px;
-    padding: 11px 16px;
+    border-radius: 20px;
+    padding: 10px 16px;
     max-width: 78%;
   }
 
-  .msg.assistant { align-items: flex-start; }
-  .avatar {
-    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
-    background: linear-gradient(135deg, var(--accent), #8f7bff);
-    display: flex; align-items: center; justify-content: center; margin-top: 2px;
-  }
-  .avatar svg { width: 15px; height: 15px; }
-  .msg.assistant .bubble { flex: 1; min-width: 0; padding-top: 3px; }
+  .msg.assistant .bubble { width: 100%; }
 
-  .bubble { font-size: 15.5px; line-height: 1.65; }
-  .bubble p { margin: 0 0 12px; }
+  .bubble { font-size: 15.5px; line-height: 1.7; }
+  .bubble p { margin: 0 0 14px; }
   .bubble p:last-child { margin-bottom: 0; }
-  .bubble ul, .bubble ol { margin: 0 0 12px; padding-left: 22px; }
+  .bubble ul, .bubble ol { margin: 0 0 14px; padding-left: 22px; }
   .bubble li { margin-bottom: 4px; }
-  .bubble h1, .bubble h2, .bubble h3 { font-size: 1.05em; margin: 16px 0 8px; }
+  .bubble h1, .bubble h2, .bubble h3 { font-size: 1.05em; margin: 18px 0 8px; }
   .bubble strong { font-weight: 700; }
-  .bubble a { color: var(--accent); }
+  .bubble a { color: inherit; text-decoration: underline; }
   .bubble code {
     font-family: "JetBrains Mono", monospace;
     font-size: 0.85em;
@@ -233,14 +310,14 @@
     border-radius: 10px;
     padding: 14px 16px;
     overflow-x: auto;
-    margin: 0 0 12px;
+    margin: 0 0 14px;
   }
   .bubble pre code { background: none; padding: 0; font-size: 13px; line-height: 1.55; }
 
   .cursor {
     display: inline-block;
     width: 2px; height: 1em;
-    background: var(--accent);
+    background: var(--text);
     margin-left: 2px;
     vertical-align: text-bottom;
     animation: blink 0.9s steps(1) infinite;
@@ -248,7 +325,7 @@
   @keyframes blink { 50% { opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
 
-  .thinking { display: flex; gap: 4px; padding: 8px 0 0 2px; }
+  .thinking { display: flex; gap: 4px; padding: 4px 0; }
   .thinking span {
     width: 6px; height: 6px; border-radius: 50%;
     background: var(--text-muted);
@@ -272,17 +349,19 @@
   }
 
   /* --- композер --- */
-  .composer-wrap { flex-shrink: 0; padding: 10px 20px 18px; }
+  .composer-wrap { flex-shrink: 0; padding: 8px 20px 18px; }
   #form {
+    max-width: 760px;
+    margin: 0 auto;
     display: flex;
     align-items: flex-end;
     gap: 8px;
     background: var(--bg-elevated);
     border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 8px 8px 8px 18px;
+    border-radius: 26px;
+    padding: 10px 10px 10px 20px;
   }
-  #form:focus-within { border-color: var(--accent); }
+  #form:focus-within { border-color: var(--text-muted); }
 
   textarea {
     flex: 1;
@@ -293,26 +372,26 @@
     font-size: 15px;
     font-family: inherit;
     outline: none;
-    min-height: 26px;
+    min-height: 24px;
     max-height: 160px;
-    padding: 7px 0;
+    padding: 6px 0;
   }
   textarea::placeholder { color: var(--text-muted); }
 
   button.send {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: var(--accent);
-    color: var(--accent-ink);
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--send-bg);
+    color: var(--send-ink);
     border: none;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
   }
-  button.send svg { width: 16px; height: 16px; }
-  button.send:disabled { opacity: 0.35; cursor: default; }
-  button.send:not(:disabled):hover { filter: brightness(1.08); }
+  button.send svg { width: 15px; height: 15px; }
+  button.send:disabled { opacity: 0.3; cursor: default; }
+  button.send:not(:disabled):hover { filter: brightness(1.15); }
 
-  .hint { text-align: center; font-size: 11.5px; color: var(--text-muted); margin-top: 10px; }
+  .hint { max-width: 760px; margin: 10px auto 0; text-align: center; font-size: 11.5px; color: var(--text-muted); }
 
   /* --- модалка настроек --- */
   .modal-backdrop {
@@ -331,7 +410,7 @@
     max-height: 88vh;
     overflow-y: auto;
     padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   }
   .modal-head {
     display: flex; align-items: center; justify-content: space-between;
@@ -359,7 +438,7 @@
     color: var(--text);
     outline: none;
   }
-  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field input:focus, .field textarea:focus { border-color: var(--text-muted); }
   .field textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
   .field-row { display: flex; gap: 12px; }
   .field-row .field { flex: 1; }
@@ -379,8 +458,8 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .btn-primary { background: var(--accent); color: var(--accent-ink); }
-  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-primary { background: var(--send-bg); color: var(--send-ink); }
+  .btn-primary:hover { filter: brightness(1.1); }
   .btn-ghost { background: transparent; color: var(--text-muted); }
   .btn-ghost:hover { color: var(--danger); }
 
@@ -398,109 +477,136 @@
 
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+
+  @media (max-width: 760px) {
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; box-shadow: 0 0 0 100vmax rgba(0,0,0,0); }
+    .sidebar:not(.collapsed) { box-shadow: 0 0 0 100vmax rgba(0,0,0,0.35); }
+  }
 </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="mark">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 L13 2Z" fill="white"/></svg>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <button type="button" class="new-chat" id="newChatBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Новый чат
+        </button>
+        <label class="sidebar-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchChats" placeholder="Поиск по чатам">
+        </label>
       </div>
-      <h1>Искра</h1>
-      <div class="spacer"></div>
-      <button type="button" class="icon-btn" id="settingsBtn" title="Настройки" aria-label="Настройки">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-        </svg>
-      </button>
-      <button type="button" class="profile-chip" id="profileBtn" title="Профиль" aria-label="Профиль">?</button>
-    </header>
+      <div class="sidebar-list" id="sidebarList"></div>
+      <div class="sidebar-bottom">
+        <button type="button" class="account-row" id="accountBtn">
+          <span class="chip" id="chip">?</span>
+          <span class="who">
+            <span class="name" id="accountName">Гость</span>
+            <span class="sub">Настройки</span>
+          </span>
+          <svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
 
-    <div class="modal-backdrop" id="modalBackdrop" hidden>
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <div class="modal-head">
-          <h2 id="modalTitle">Персонализация</h2>
-          <button type="button" class="icon-btn" id="closeModal" aria-label="Закрыть">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    <div class="main-col">
+      <div class="topbar">
+        <button type="button" class="icon-btn" id="sidebarToggle" title="Свернуть/развернуть панель" aria-label="Свернуть/развернуть панель">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg>
+        </button>
+        <img src="/logo.png" alt="" class="title-mark">
+        <span class="title">Искра</span>
+      </div>
+
+      <main id="main">
+        <div id="welcome" class="welcome">
+          <div class="mark-lg">
+            <img src="/logo.png" alt="Искра">
+          </div>
+          <h2>Чем помочь сегодня?</h2>
+          <div class="suggestions" id="suggestions">
+            <button type="button" class="suggestion" data-text="Объясни простыми словами, что такое рекурсия в программировании">
+              <span class="emoji">💡</span>Объясни простыми словами, что такое рекурсия
+            </button>
+            <button type="button" class="suggestion" data-text="Составь план тренировок на неделю для новичка">
+              <span class="emoji">🏋️</span>Составь план тренировок на неделю
+            </button>
+            <button type="button" class="suggestion" data-text="Напиши короткое поздравление с днём рождения другу в шутливом тоне">
+              <span class="emoji">🎉</span>Напиши поздравление с днём рождения
+            </button>
+            <button type="button" class="suggestion" data-text="Помоги составить резюме для позиции менеджера проектов">
+              <span class="emoji">📄</span>Помоги составить резюме
+            </button>
+          </div>
+        </div>
+        <div id="thread" hidden></div>
+      </main>
+
+      <div class="composer-wrap">
+        <form id="form">
+          <textarea id="input" placeholder="Напишите сообщение…" rows="1"></textarea>
+          <button class="send" id="send" type="submit" disabled>
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 20V4M12 4L5 11M12 4L19 11" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-        </div>
-        <p class="modal-sub">Искра будет учитывать это в каждом ответе.</p>
-
-        <div class="privacy-note">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
-          <span>Хранится только в этом браузере (localStorage). При каждом сообщении отправляется вместе с ним в Gemini, чтобы формировать персонализированный ответ.</span>
-        </div>
-
-        <form id="profileForm">
-          <div class="field-row">
-            <div class="field">
-              <label for="pName">Как вас зовут</label>
-              <input type="text" id="pName" maxlength="80" placeholder="Например, Данияр" autocomplete="off">
-            </div>
-            <div class="field" style="max-width: 110px;">
-              <label for="pAge">Возраст</label>
-              <input type="number" id="pAge" min="1" max="120" placeholder="27" autocomplete="off">
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="pOccupation">Чем занимаетесь</label>
-            <input type="text" id="pOccupation" maxlength="150" placeholder="Например, дизайнер, учусь в 11 классе, веду свой бизнес…" autocomplete="off">
-          </div>
-
-          <div class="field">
-            <label for="pAbout">Что ещё важно знать о вас</label>
-            <textarea id="pAbout" maxlength="600" placeholder="Интересы, проекты, предпочтения — что угодно, что поможет отвечать точнее"></textarea>
-            <div class="counter"><span id="pAboutCount">0</span>/600</div>
-          </div>
-
-          <div class="field">
-            <label for="pStyle">Как Искра должна отвечать</label>
-            <textarea id="pStyle" maxlength="600" placeholder="Например: коротко и по делу, без воды; объясняй как новичку; можно с юмором"></textarea>
-            <div class="counter"><span id="pStyleCount">0</span>/600</div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" class="btn-ghost" id="clearProfile">Очистить всё</button>
-            <button type="submit" class="btn-primary">Сохранить</button>
-          </div>
         </form>
+        <p class="hint">Искра может ошибаться. Проверяйте важные факты.</p>
       </div>
     </div>
+  </div>
 
-    <main id="main">
-      <div id="welcome" class="welcome">
-        <div class="mark-lg">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 L13 2Z" fill="white"/></svg>
-        </div>
-        <h2>Чем помочь сегодня?</h2>
-        <div class="suggestions" id="suggestions">
-          <button type="button" class="suggestion" data-text="Объясни простыми словами, что такое рекурсия в программировании">
-            <span class="emoji">💡</span>Объясни простыми словами, что такое рекурсия
-          </button>
-          <button type="button" class="suggestion" data-text="Составь план тренировок на неделю для новичка">
-            <span class="emoji">🏋️</span>Составь план тренировок на неделю
-          </button>
-          <button type="button" class="suggestion" data-text="Напиши короткое поздравление с днём рождения другу в шутливом тоне">
-            <span class="emoji">🎉</span>Напиши поздравление с днём рождения
-          </button>
-          <button type="button" class="suggestion" data-text="Помоги составить резюме для позиции менеджера проектов">
-            <span class="emoji">📄</span>Помоги составить резюме
-          </button>
-        </div>
-      </div>
-      <div id="thread" hidden></div>
-    </main>
-
-    <div class="composer-wrap">
-      <form id="form">
-        <textarea id="input" placeholder="Напишите сообщение…" rows="1"></textarea>
-        <button class="send" id="send" type="submit" disabled>
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 20V4M12 4L5 11M12 4L19 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h2 id="modalTitle">Персонализация</h2>
+        <button type="button" class="icon-btn" id="closeModal" aria-label="Закрыть">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
+      </div>
+      <p class="modal-sub">Искра будет учитывать это в каждом ответе.</p>
+
+      <div class="privacy-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+        <span>Хранится только в этом браузере (localStorage). При каждом сообщении отправляется вместе с ним в Gemini, чтобы формировать персонализированный ответ.</span>
+      </div>
+
+      <form id="profileForm">
+        <div class="field-row">
+          <div class="field">
+            <label for="pName">Как вас зовут</label>
+            <input type="text" id="pName" maxlength="80" placeholder="Например, Данияр" autocomplete="off">
+          </div>
+          <div class="field" style="max-width: 110px;">
+            <label for="pAge">Возраст</label>
+            <input type="number" id="pAge" min="1" max="120" placeholder="27" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="pOccupation">Чем занимаетесь</label>
+          <input type="text" id="pOccupation" maxlength="150" placeholder="Например, дизайнер, учусь в 11 классе, веду свой бизнес…" autocomplete="off">
+        </div>
+
+        <div class="field">
+          <label for="pAbout">Что ещё важно знать о вас</label>
+          <textarea id="pAbout" maxlength="600" placeholder="Интересы, проекты, предпочтения — что угодно, что поможет отвечать точнее"></textarea>
+          <div class="counter"><span id="pAboutCount">0</span>/600</div>
+        </div>
+
+        <div class="field">
+          <label for="pStyle">Как Искра должна отвечать</label>
+          <textarea id="pStyle" maxlength="600" placeholder="Например: коротко и по делу, без воды; объясняй как новичку; можно с юмором"></textarea>
+          <div class="counter"><span id="pStyleCount">0</span>/600</div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="clearProfile">Очистить всё</button>
+          <button type="submit" class="btn-primary">Сохранить</button>
+        </div>
       </form>
-      <p class="hint">Искра может ошибаться. Проверяйте важные факты.</p>
     </div>
   </div>
 
@@ -511,40 +617,35 @@
   const form = document.getElementById('form');
   const input = document.getElementById('input');
   const sendBtn = document.getElementById('send');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarList = document.getElementById('sidebarList');
+  const searchChats = document.getElementById('searchChats');
+  const welcomeHeading = document.querySelector('#welcome h2');
 
   let turns = [];
   let busy = false;
+  let currentChatId = null;
 
   marked.setOptions({ breaks: true });
 
-  // --- Профиль / персонализация ---
+  // ---------- Профиль / персонализация ----------
   const PROFILE_KEY = 'iskra_profile';
-
   function loadProfile() {
-    try {
-      return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
-    } catch {
-      return {};
-    }
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; }
+    catch { return {}; }
   }
-
-  function saveProfile(profile) {
-    try {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-    } catch {
-      // приватный режим / хранилище недоступно — просто не сохраняем
-    }
+  function saveProfile(p) {
+    try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch {}
   }
-
   let profile = loadProfile();
 
-  const profileBtn = document.getElementById('profileBtn');
-  const settingsBtn = document.getElementById('settingsBtn');
+  const accountBtn = document.getElementById('accountBtn');
+  const chip = document.getElementById('chip');
+  const accountName = document.getElementById('accountName');
   const modalBackdrop = document.getElementById('modalBackdrop');
   const closeModal = document.getElementById('closeModal');
   const profileForm = document.getElementById('profileForm');
   const clearProfileBtn = document.getElementById('clearProfile');
-  const welcomeHeading = document.querySelector('#welcome h2');
 
   const fields = {
     name: document.getElementById('pName'),
@@ -559,12 +660,11 @@
   };
 
   function refreshChrome() {
-    const initial = (profile.name || '?').trim().charAt(0).toUpperCase() || '?';
-    profileBtn.textContent = initial;
-    if (welcomeEl.hidden === false || !threadEl.childElementCount) {
-      welcomeHeading.textContent = profile.name
-        ? `Чем помочь, ${profile.name}?`
-        : 'Чем помочь сегодня?';
+    const initial = (profile.name || 'Г').trim().charAt(0).toUpperCase() || 'Г';
+    chip.textContent = initial;
+    accountName.textContent = profile.name || 'Гость';
+    if (!currentChatId) {
+      welcomeHeading.textContent = profile.name ? `Чем помочь, ${profile.name}?` : 'Чем помочь сегодня?';
     }
   }
 
@@ -578,21 +678,13 @@
     counters.style.textContent = fields.style.value.length;
   }
 
-  function openModal() {
-    fillForm();
-    modalBackdrop.hidden = false;
-    fields.name.focus();
-  }
-  function hideModal() {
-    modalBackdrop.hidden = true;
-  }
+  function openModal() { fillForm(); modalBackdrop.hidden = false; fields.name.focus(); }
+  function hideModal() { modalBackdrop.hidden = true; }
 
-  profileBtn.addEventListener('click', openModal);
-  settingsBtn.addEventListener('click', openModal);
+  accountBtn.addEventListener('click', openModal);
   closeModal.addEventListener('click', hideModal);
   modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) hideModal(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modalBackdrop.hidden) hideModal(); });
-
   fields.about.addEventListener('input', () => { counters.about.textContent = fields.about.value.length; });
   fields.style.addEventListener('input', () => { counters.style.textContent = fields.style.value.length; });
 
@@ -617,17 +709,127 @@
     refreshChrome();
   });
 
-  refreshChrome();
+  // ---------- История чатов (боковая панель) ----------
+  const CHATS_KEY = 'iskra_chats';
+  function loadChats() {
+    try { return JSON.parse(localStorage.getItem(CHATS_KEY)) || {}; }
+    catch { return {}; }
+  }
+  function saveChats(chats) {
+    try { localStorage.setItem(CHATS_KEY, JSON.stringify(chats)); } catch {}
+  }
 
+  function groupLabel(ts) {
+    const d = new Date(ts), now = new Date();
+    const days = Math.floor((new Date(now.toDateString()) - new Date(d.toDateString())) / 86400000);
+    if (days <= 0) return 'Сегодня';
+    if (days === 1) return 'Вчера';
+    if (days <= 7) return 'Предыдущие 7 дней';
+    return 'Ранее';
+  }
+
+  function renderSidebar() {
+    const chats = loadChats();
+    const q = searchChats.value.trim().toLowerCase();
+    const list = Object.values(chats)
+      .filter((c) => !q || c.title.toLowerCase().includes(q))
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+
+    sidebarList.innerHTML = '';
+    if (!list.length) {
+      sidebarList.innerHTML = `<div class="sidebar-empty">${q ? 'Ничего не найдено' : 'Пока нет чатов'}</div>`;
+      return;
+    }
+
+    let lastGroup = null;
+    for (const c of list) {
+      const g = groupLabel(c.updatedAt);
+      if (g !== lastGroup) {
+        lastGroup = g;
+        const label = document.createElement('div');
+        label.className = 'group-label';
+        label.textContent = g;
+        sidebarList.appendChild(label);
+      }
+      const item = document.createElement('div');
+      item.className = 'chat-item' + (c.id === currentChatId ? ' active' : '');
+      item.innerHTML = `<span class="title"></span><button type="button" class="del" title="Удалить" aria-label="Удалить чат"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>`;
+      item.querySelector('.title').textContent = c.title;
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.del')) return;
+        openChat(c.id);
+      });
+      item.querySelector('.del').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const all = loadChats();
+        delete all[c.id];
+        saveChats(all);
+        if (c.id === currentChatId) startNewChat();
+        renderSidebar();
+      });
+      sidebarList.appendChild(item);
+    }
+  }
+
+  function persistCurrentChat() {
+    if (!turns.length) return;
+    const chats = loadChats();
+    if (!currentChatId) currentChatId = crypto.randomUUID();
+    const firstUser = turns.find((t) => t.role === 'user');
+    const title = (firstUser?.content || 'Новый чат').slice(0, 48);
+    chats[currentChatId] = { id: currentChatId, title, turns, updatedAt: Date.now() };
+    saveChats(chats);
+    renderSidebar();
+  }
+
+  function openChat(id) {
+    const chats = loadChats();
+    const c = chats[id];
+    if (!c) return;
+    currentChatId = id;
+    turns = c.turns.slice();
+    threadEl.innerHTML = '';
+    for (const t of turns) {
+      if (t.role === 'user') addUserMessage(t.content);
+      else renderFinal(addAssistantMessage(), t.content);
+    }
+    showThread();
+    renderSidebar();
+    closeSidebarOnMobile();
+  }
+
+  function startNewChat() {
+    currentChatId = null;
+    turns = [];
+    threadEl.innerHTML = '';
+    threadEl.hidden = true;
+    welcomeEl.hidden = false;
+    refreshChrome();
+    renderSidebar();
+    input.focus();
+    closeSidebarOnMobile();
+  }
+
+  document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+  searchChats.addEventListener('input', renderSidebar);
+
+  // ---------- Сворачивание боковой панели ----------
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  function isMobile() { return window.matchMedia('(max-width: 760px)').matches; }
+  function closeSidebarOnMobile() { if (isMobile()) sidebar.classList.add('collapsed'); }
+  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+  if (isMobile()) sidebar.classList.add('collapsed');
+
+  refreshChrome();
+  renderSidebar();
+
+  // ---------- Сообщения ----------
   function showThread() {
-    if (welcomeEl.hidden) return;
     welcomeEl.hidden = true;
     threadEl.hidden = false;
   }
 
-  function scrollDown() {
-    mainEl.scrollTop = mainEl.scrollHeight;
-  }
+  function scrollDown() { mainEl.scrollTop = mainEl.scrollHeight; }
 
   function addUserMessage(text) {
     const row = document.createElement('div');
@@ -641,10 +843,7 @@
   function addAssistantMessage() {
     const row = document.createElement('div');
     row.className = 'msg assistant';
-    row.innerHTML = `
-      <div class="avatar"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 L13 2Z" fill="white"/></svg></div>
-      <div class="bubble"><div class="thinking"><span></span><span></span><span></span></div></div>
-    `;
+    row.innerHTML = `<div class="bubble"><div class="thinking"><span></span><span></span><span></span></div></div>`;
     threadEl.appendChild(row);
     scrollDown();
     return row.querySelector('.bubble');
@@ -654,11 +853,9 @@
     bubble.innerHTML = marked.parse(text) + '<span class="cursor"></span>';
     scrollDown();
   }
-
   function renderFinal(bubble, text) {
     bubble.innerHTML = text ? marked.parse(text) : '';
   }
-
   function addNotice(text) {
     const el = document.createElement('div');
     el.className = 'notice';
@@ -675,7 +872,6 @@
     autoResize();
     sendBtn.disabled = !input.value.trim() || busy;
   });
-
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -698,25 +894,19 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: turns, profile }),
     });
-
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       throw new Error(data.error || ('Ошибка ' + res.status));
     }
-
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let buffer = '';
-    let full = '';
-    let firstChunk = true;
-
+    let buffer = '', full = '';
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       const parts = buffer.split('\n\n');
       buffer = parts.pop();
-
       for (const part of parts) {
         if (!part.startsWith('data:')) continue;
         const payload = part.slice(5).trim();
@@ -724,11 +914,7 @@
         let parsed;
         try { parsed = JSON.parse(payload); } catch { continue; }
         if (parsed.error) throw new Error(parsed.error);
-        if (parsed.text) {
-          full += parsed.text;
-          if (firstChunk) { firstChunk = false; }
-          renderStreaming(bubble, full);
-        }
+        if (parsed.text) { full += parsed.text; renderStreaming(bubble, full); }
       }
     }
     return full;
@@ -753,6 +939,7 @@
       const full = await streamChat(bubble);
       renderFinal(bubble, full);
       turns.push({ role: 'assistant', content: full });
+      persistCurrentChat();
     } catch (err) {
       bubble.closest('.msg').remove();
       addNotice('Ошибка: ' + err.message);
