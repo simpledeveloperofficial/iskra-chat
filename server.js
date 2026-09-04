@@ -4,7 +4,17 @@ const express = require('express');
 
 const app = express();
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1d',
+  setHeaders: (res, filePath) => {
+    // index.html и манифест должны обновляться сразу, картинки — можно кэшировать дольше
+    if (filePath.endsWith('.html') || filePath.endsWith('manifest.json')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    } else if (/\.(png|jpg|jpeg|svg|ico)$/.test(filePath)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    }
+  },
+}));
 
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
