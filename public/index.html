@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Искра</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-elevated: #f7f7f8;
+    --border: #e6e6ea;
+    --text: #1b1c1f;
+    --text-muted: #6b6d76;
+    --accent: #4a5cff;
+    --accent-ink: #ffffff;
+    --accent-soft: #eef0ff;
+    --bubble-user: #f0f1f5;
+    --code-bg: #1b1c1f;
+    --code-text: #e6e6ea;
+    --danger: #c0362c;
+    --danger-bg: #fbeae8;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17181c;
+      --bg-elevated: #1f2024;
+      --border: #2c2d33;
+      --text: #ececef;
+      --text-muted: #93949e;
+      --accent: #7b89ff;
+      --accent-ink: #14152b;
+      --accent-soft: #23264a;
+      --bubble-user: #26272d;
+      --code-bg: #0e0f12;
+      --code-text: #e6e6ea;
+      --danger: #ff8a7a;
+      --danger-bg: #3a2220;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17181c;
+    --bg-elevated: #1f2024;
+    --border: #2c2d33;
+    --text: #ececef;
+    --text-muted: #93949e;
+    --accent: #7b89ff;
+    --accent-ink: #14152b;
+    --accent-soft: #23264a;
+    --bubble-user: #26272d;
+    --code-bg: #0e0f12;
+    --code-text: #e6e6ea;
+    --danger: #ff8a7a;
+    --danger-bg: #3a2220;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Manrope", -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 780px;
+    margin: 0 auto;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    flex-shrink: 0;
+  }
+  header .spacer { flex: 1; }
+
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--bg-elevated); color: var(--text); }
+  .icon-btn svg { width: 19px; height: 19px; }
+
+  .profile-chip {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: none;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .profile-chip:hover { filter: brightness(0.97); }
+
+  .mark {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), #8f7bff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .mark svg { width: 16px; height: 16px; }
+
+  header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px;
+  }
+
+  /* --- приветственный экран --- */
+  .welcome {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 28px;
+    padding-bottom: 60px;
+  }
+  .welcome .mark-lg {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: linear-gradient(135deg, var(--accent), #8f7bff);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .welcome .mark-lg svg { width: 30px; height: 30px; }
+  .welcome h2 {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  .welcome p { margin: -16px 0 0; color: var(--text-muted); font-size: 14.5px; }
+
+  .suggestions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 560px;
+  }
+  .suggestion {
+    text-align: left;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 13px 15px;
+    font-size: 13.5px;
+    font-family: inherit;
+    color: var(--text);
+    cursor: pointer;
+    line-height: 1.4;
+  }
+  .suggestion:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .suggestion .emoji { font-size: 16px; display: block; margin-bottom: 6px; }
+
+  /* --- сообщения --- */
+  #thread {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 24px 0 20px;
+  }
+
+  .msg { display: flex; gap: 12px; animation: rise 0.25s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .msg { animation: none; } }
+
+  .msg.user { justify-content: flex-end; }
+  .msg.user .bubble {
+    background: var(--bubble-user);
+    border-radius: 18px 18px 4px 18px;
+    padding: 11px 16px;
+    max-width: 78%;
+  }
+
+  .msg.assistant { align-items: flex-start; }
+  .avatar {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), #8f7bff);
+    display: flex; align-items: center; justify-content: center; margin-top: 2px;
+  }
+  .avatar svg { width: 15px; height: 15px; }
+  .msg.assistant .bubble { flex: 1; min-width: 0; padding-top: 3px; }
+
+  .bubble { font-size: 15.5px; line-height: 1.65; }
+  .bubble p { margin: 0 0 12px; }
+  .bubble p:last-child { margin-bottom: 0; }
+  .bubble ul, .bubble ol { margin: 0 0 12px; padding-left: 22px; }
+  .bubble li { margin-bottom: 4px; }
+  .bubble h1, .bubble h2, .bubble h3 { font-size: 1.05em; margin: 16px 0 8px; }
+  .bubble strong { font-weight: 700; }
+  .bubble a { color: var(--accent); }
+  .bubble code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.85em;
+    background: var(--bg-elevated);
+    padding: 2px 5px;
+    border-radius: 4px;
+  }
+  .bubble pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 0 0 12px;
+  }
+  .bubble pre code { background: none; padding: 0; font-size: 13px; line-height: 1.55; }
+
+  .cursor {
+    display: inline-block;
+    width: 2px; height: 1em;
+    background: var(--accent);
+    margin-left: 2px;
+    vertical-align: text-bottom;
+    animation: blink 0.9s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
+
+  .thinking { display: flex; gap: 4px; padding: 8px 0 0 2px; }
+  .thinking span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--text-muted);
+    animation: bounce 1.1s ease-in-out infinite;
+  }
+  .thinking span:nth-child(2) { animation-delay: 0.15s; }
+  .thinking span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .thinking span { animation: none; opacity: 0.7; } }
+
+  .notice {
+    align-self: center;
+    max-width: 92%;
+    margin: 0 auto;
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--danger);
+    background: var(--danger-bg);
+    padding: 10px 16px;
+    border-radius: 10px;
+  }
+
+  /* --- композер --- */
+  .composer-wrap { flex-shrink: 0; padding: 10px 20px 18px; }
+  #form {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 8px 8px 8px 18px;
+  }
+  #form:focus-within { border-color: var(--accent); }
+
+  textarea {
+    flex: 1;
+    resize: none;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    min-height: 26px;
+    max-height: 160px;
+    padding: 7px 0;
+  }
+  textarea::placeholder { color: var(--text-muted); }
+
+  button.send {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  button.send svg { width: 16px; height: 16px; }
+  button.send:disabled { opacity: 0.35; cursor: default; }
+  button.send:not(:disabled):hover { filter: brightness(1.08); }
+
+  .hint { text-align: center; font-size: 11.5px; color: var(--text-muted); margin-top: 10px; }
+
+  /* --- модалка настроек --- */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(10, 11, 14, 0.5);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    z-index: 10;
+  }
+  .modal {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 88vh;
+    overflow-y: auto;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .modal-head h2 { font-size: 18px; margin: 0; font-weight: 800; letter-spacing: -0.01em; }
+  .modal-sub { color: var(--text-muted); font-size: 13px; margin: 0 0 20px; }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14.5px;
+    font-family: inherit;
+    color: var(--text);
+    outline: none;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+  .field-row { display: flex; gap: 12px; }
+  .field-row .field { flex: 1; }
+  .field .counter { text-align: right; font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+  .modal-actions {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .btn-primary, .btn-ghost {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-ghost { background: transparent; color: var(--text-muted); }
+  .btn-ghost:hover { color: var(--danger); }
+
+  .privacy-note {
+    display: flex; gap: 8px; align-items: flex-start;
+    background: var(--bg-elevated);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .privacy-note svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; }
+
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 L13 2Z" fill="white"/></svg>
+      </div>
+      <h1>Искра</h1>
+      <div class="spacer"></div>
+      <button type="button" class="icon-btn" id="settingsBtn" title="Настройки" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button type="button" class="profile-chip" id="profileBtn" title="Профиль" aria-label="Профиль">?</button>
+    </header>
+
+    <div class="modal-backdrop" id="modalBackdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-head">
+          <h2 id="modalTitle">Персонализация</h2>
+          <button type="button" class="icon-btn" id="closeModal" aria-label="Закрыть">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <p class="modal-sub">Искра будет учитывать это в каждом ответе.</p>
+
+        <div class="privacy-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
+          <span>Хранится только в этом браузере (localStorage). При каждом сообщении отправляется вместе с ним в Gemini, чтобы формировать персонализированный ответ.</span>
+        </div>
+
+        <form id="profileForm">
+          <div class="field-row">
+            <div class="field">
+              <label for="pName">Как вас зовут</label>
+              <input type="text" id="pName" maxlength="80" placeholder="Например, Данияр" autocomplete="off">
+            </div>
+            <div class="field" style="max-width: 110px;">
+              <label for="pAge">Возраст</label>
+              <input type="number" id="pAge" min="1" max="120" placeholder="27" autocomplete="off">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="pOccupation">Чем занимаетесь</label>
+            <input type="text" id="pOccupation" maxlength="150" placeholder="Например, дизайнер, учусь в 11 классе, веду свой бизнес…" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <label for="pAbout">Что ещё важно знать о вас</label>
+            <textarea id="pAbout" maxlength="600" placeholder="Интересы, проекты, предпочтения — что угодно, что поможет отвечать точнее"></textarea>
+            <div class="counter"><span id="pAboutCount">0</span>/600</div>
+          </div>
+
+          <div class="field">
+            <label for="pStyle">Как Искра должна отвечать</label>
+            <textarea id="pStyle" maxlength="600" placeholder="Например: коротко и по делу, без воды; объясняй как новичку; можно с юмором"></textarea>
+            <div class="counter"><span id="pStyleCount">0</span>/600</div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-ghost" id="clearProfile">Очистить всё</button>
+            <button type="submit" class="btn-primary">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <main id="main">
+      <div id="welcome" class="welcome">
+        <div class="mark-lg">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 L13 2Z" fill="white"/></svg>
+        </div>
+        <h2>Чем помочь сегодня?</h2>
+        <div class="suggestions" id="suggestions">
+          <button type="button" class="suggestion" data-text="Объясни простыми словами, что такое рекурсия в программировании">
+            <span class="emoji">💡</span>Объясни простыми словами, что такое рекурсия
+          </button>
+          <button type="button" class="suggestion" data-text="Составь план тренировок на неделю для новичка">
+            <span class="emoji">🏋️</span>Составь план тренировок на неделю
+          </button>
+          <button type="button" class="suggestion" data-text="Напиши короткое поздравление с днём рождения другу в шутливом тоне">
+            <span class="emoji">🎉</span>Напиши поздравление с днём рождения
+          </button>
+          <button type="button" class="suggestion" data-text="Помоги составить резюме для позиции менеджера проектов">
+            <span class="emoji">📄</span>Помоги составить резюме
+          </button>
+        </div>
+      </div>
+      <div id="thread" hidden></div>
+    </main>
+
+    <div class="composer-wrap">
+      <form id="form">
+        <textarea id="input" placeholder="Напишите сообщение…" rows="1"></textarea>
+        <button class="send" id="send" type="submit" disabled>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 20V4M12 4L5 11M12 4L19 11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </form>
+      <p class="hint">Искра может ошибаться. Проверяйте важные факты.</p>
+    </div>
+  </div>
+
+<script>
+  const mainEl = document.getElementById('main');
+  const welcomeEl = document.getElementById('welcome');
+  const threadEl = document.getElementById('thread');
+  const form = document.getElementById('form');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('send');
+
+  let turns = [];
+  let busy = false;
+
+  marked.setOptions({ breaks: true });
+
+  // --- Профиль / персонализация ---
+  const PROFILE_KEY = 'iskra_profile';
+
+  function loadProfile() {
+    try {
+      return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveProfile(profile) {
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch {
+      // приватный режим / хранилище недоступно — просто не сохраняем
+    }
+  }
+
+  let profile = loadProfile();
+
+  const profileBtn = document.getElementById('profileBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+  const modalBackdrop = document.getElementById('modalBackdrop');
+  const closeModal = document.getElementById('closeModal');
+  const profileForm = document.getElementById('profileForm');
+  const clearProfileBtn = document.getElementById('clearProfile');
+  const welcomeHeading = document.querySelector('#welcome h2');
+
+  const fields = {
+    name: document.getElementById('pName'),
+    age: document.getElementById('pAge'),
+    occupation: document.getElementById('pOccupation'),
+    about: document.getElementById('pAbout'),
+    style: document.getElementById('pStyle'),
+  };
+  const counters = {
+    about: document.getElementById('pAboutCount'),
+    style: document.getElementById('pStyleCount'),
+  };
+
+  function refreshChrome() {
+    const initial = (profile.name || '?').trim().charAt(0).toUpperCase() || '?';
+    profileBtn.textContent = initial;
+    if (welcomeEl.hidden === false || !threadEl.childElementCount) {
+      welcomeHeading.textContent = profile.name
+        ? `Чем помочь, ${profile.name}?`
+        : 'Чем помочь сегодня?';
+    }
+  }
+
+  function fillForm() {
+    fields.name.value = profile.name || '';
+    fields.age.value = profile.age || '';
+    fields.occupation.value = profile.occupation || '';
+    fields.about.value = profile.about || '';
+    fields.style.value = profile.style || '';
+    counters.about.textContent = fields.about.value.length;
+    counters.style.textContent = fields.style.value.length;
+  }
+
+  function openModal() {
+    fillForm();
+    modalBackdrop.hidden = false;
+    fields.name.focus();
+  }
+  function hideModal() {
+    modalBackdrop.hidden = true;
+  }
+
+  profileBtn.addEventListener('click', openModal);
+  settingsBtn.addEventListener('click', openModal);
+  closeModal.addEventListener('click', hideModal);
+  modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) hideModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modalBackdrop.hidden) hideModal(); });
+
+  fields.about.addEventListener('input', () => { counters.about.textContent = fields.about.value.length; });
+  fields.style.addEventListener('input', () => { counters.style.textContent = fields.style.value.length; });
+
+  profileForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    profile = {
+      name: fields.name.value.trim(),
+      age: fields.age.value.trim(),
+      occupation: fields.occupation.value.trim(),
+      about: fields.about.value.trim(),
+      style: fields.style.value.trim(),
+    };
+    saveProfile(profile);
+    refreshChrome();
+    hideModal();
+  });
+
+  clearProfileBtn.addEventListener('click', () => {
+    profile = {};
+    saveProfile(profile);
+    fillForm();
+    refreshChrome();
+  });
+
+  refreshChrome();
+
+  function showThread() {
+    if (welcomeEl.hidden) return;
+    welcomeEl.hidden = true;
+    threadEl.hidden = false;
+  }
+
+  function scrollDown() {
+    mainEl.scrollTop = mainEl.scrollHeight;
+  }
+
+  function addUserMessage(text) {
+    const row = document.createElement('div');
+    row.className = 'msg user';
+    row.innerHTML = `<div class="bubble"></div>`;
+    row.querySelector('.bubble').textContent = text;
+    threadEl.appendChild(row);
+    scrollDown();
+  }
+
+  function addAssistantMessage() {
+    const row = document.createElement('div');
+    row.className = 'msg assistant';
+    row.innerHTML = `
+      <div class="avatar"><svg viewBox="0 0 24 24" fill="none"><path d="M13 2 L4 14 H11 L10 22 L20 9 H13 L13 2Z" fill="white"/></svg></div>
+      <div class="bubble"><div class="thinking"><span></span><span></span><span></span></div></div>
+    `;
+    threadEl.appendChild(row);
+    scrollDown();
+    return row.querySelector('.bubble');
+  }
+
+  function renderStreaming(bubble, text) {
+    bubble.innerHTML = marked.parse(text) + '<span class="cursor"></span>';
+    scrollDown();
+  }
+
+  function renderFinal(bubble, text) {
+    bubble.innerHTML = text ? marked.parse(text) : '';
+  }
+
+  function addNotice(text) {
+    const el = document.createElement('div');
+    el.className = 'notice';
+    el.textContent = text;
+    threadEl.appendChild(el);
+    scrollDown();
+  }
+
+  function autoResize() {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+  }
+  input.addEventListener('input', () => {
+    autoResize();
+    sendBtn.disabled = !input.value.trim() || busy;
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!sendBtn.disabled) form.requestSubmit();
+    }
+  });
+
+  document.getElementById('suggestions').addEventListener('click', (e) => {
+    const btn = e.target.closest('.suggestion');
+    if (!btn) return;
+    input.value = btn.dataset.text;
+    autoResize();
+    sendBtn.disabled = false;
+    form.requestSubmit();
+  });
+
+  async function streamChat(bubble) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: turns, profile }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || ('Ошибка ' + res.status));
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let full = '';
+    let firstChunk = true;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const parts = buffer.split('\n\n');
+      buffer = parts.pop();
+
+      for (const part of parts) {
+        if (!part.startsWith('data:')) continue;
+        const payload = part.slice(5).trim();
+        if (payload === '[DONE]') return full;
+        let parsed;
+        try { parsed = JSON.parse(payload); } catch { continue; }
+        if (parsed.error) throw new Error(parsed.error);
+        if (parsed.text) {
+          full += parsed.text;
+          if (firstChunk) { firstChunk = false; }
+          renderStreaming(bubble, full);
+        }
+      }
+    }
+    return full;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || busy) return;
+
+    showThread();
+    addUserMessage(text);
+    turns.push({ role: 'user', content: text });
+    input.value = '';
+    autoResize();
+    busy = true;
+    sendBtn.disabled = true;
+
+    const bubble = addAssistantMessage();
+
+    try {
+      const full = await streamChat(bubble);
+      renderFinal(bubble, full);
+      turns.push({ role: 'assistant', content: full });
+    } catch (err) {
+      bubble.closest('.msg').remove();
+      addNotice('Ошибка: ' + err.message);
+      turns.pop();
+    } finally {
+      busy = false;
+      sendBtn.disabled = !input.value.trim();
+      input.focus();
+      scrollDown();
+    }
+  });
+</script>
+</body>
+</html>
