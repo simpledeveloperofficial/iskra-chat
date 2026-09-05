@@ -413,7 +413,7 @@
     background: rgba(10, 11, 14, 0.5);
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
-    z-index: 10;
+    z-index: 30;
   }
   .modal {
     background: var(--bg);
@@ -700,7 +700,12 @@
     counters.style.textContent = fields.style.value.length;
   }
 
-  function openModal() { fillForm(); modalBackdrop.hidden = false; fields.name.focus(); }
+  function openModal() {
+    fillForm();
+    modalBackdrop.hidden = false;
+    fields.name.focus();
+    closeSidebarOnMobile();
+  }
   function hideModal() { modalBackdrop.hidden = true; }
 
   accountBtn.addEventListener('click', openModal);
