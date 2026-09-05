@@ -492,14 +492,22 @@
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
 
+  .sidebar-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 19;
+  }
+
   @media (max-width: 760px) {
-    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; box-shadow: 0 0 0 100vmax rgba(0,0,0,0); }
-    .sidebar:not(.collapsed) { box-shadow: 0 0 0 100vmax rgba(0,0,0,0.35); }
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; }
+    .sidebar-backdrop.show { display: block; }
   }
 </style>
 </head>
 <body>
   <div class="shell">
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
         <button type="button" class="new-chat" id="newChatBtn">
@@ -584,7 +592,7 @@
 
       <div class="privacy-note">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
-        <span>Хранится только в этом браузере (localStorage). При каждом сообщении отправляется вместе с ним в Gemini, чтобы формировать персонализированный ответ.</span>
+        <span>Хранится только в этом браузере (localStorage). При каждом сообщении отправляется вместе с ним в OpenAI, чтобы формировать персонализированный ответ.</span>
       </div>
 
       <form id="profileForm">
@@ -829,10 +837,19 @@
 
   // ---------- Сворачивание боковой панели ----------
   const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebarBackdrop = document.getElementById('sidebarBackdrop');
   function isMobile() { return window.matchMedia('(max-width: 760px)').matches; }
-  function closeSidebarOnMobile() { if (isMobile()) sidebar.classList.add('collapsed'); }
-  sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
-  if (isMobile()) sidebar.classList.add('collapsed');
+
+  function setSidebarOpen(open) {
+    sidebar.classList.toggle('collapsed', !open);
+    sidebarBackdrop.classList.toggle('show', open && isMobile());
+  }
+  function closeSidebarOnMobile() { if (isMobile()) setSidebarOpen(false); }
+
+  sidebarToggle.addEventListener('click', () => setSidebarOpen(sidebar.classList.contains('collapsed')));
+  sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
+  window.addEventListener('resize', () => { if (!isMobile()) sidebarBackdrop.classList.remove('show'); });
+  if (isMobile()) setSidebarOpen(false);
 
   refreshChrome();
   renderSidebar();

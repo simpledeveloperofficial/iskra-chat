@@ -16,14 +16,14 @@ app.use(express.static(path.join(__dirname, 'public'), {
   },
 }));
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.OPENAI_API_KEY;
 if (!apiKey) {
-  console.error('GEMINI_API_KEY не задан. Получите бесплатный ключ на https://aistudio.google.com/apikey и добавьте его в .env');
+  console.error('OPENAI_API_KEY не задан. Создайте ключ на https://platform.openai.com/api-keys и добавьте его в .env');
   process.exit(1);
 }
 
-const MODEL = 'gemini-3.6-flash';
-const STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:streamGenerateContent?alt=sse&key=${apiKey}`;
+const MODEL = 'gpt-5-nano';
+const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 
 const BASE_INSTRUCTION = 'Тебя зовут Искра. Ты дружелюбный ИИ-помощник. Если спросят, кто тебя создал или на чём ты работаешь — просто скажи, что ты Искра, ассистент этого сайта, без лишних технических деталей. Форматируй ответы markdown: списки, заголовки, ```блоки кода``` там, где уместно. Отвечай на русском языке, если пользователь не пишет на другом.';
 
@@ -43,32 +43,35 @@ function buildSystemInstruction(profile) {
       text += '\n\nПерсонализация от пользователя (учитывай, но не пересказывай эти пункты вслух без повода):\n' + lines.join('\n');
     }
   }
-  return { parts: [{ text }] };
+  return text;
 }
 
-// Стриминг: сервер сам читает SSE-поток Gemini и пересобирает его в
+// Стриминг: сервер сам читает SSE-поток OpenAI и пересобирает его в
 // простой построчный формат "data: {text}\n\n" для клиента — клиенту
-// не нужно знать формат ответа Gemini.
+// не нужно знать формат ответа OpenAI.
 app.post('/api/chat', async (req, res) => {
   const { messages, profile } = req.body;
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages обязателен' });
   }
 
-  const contents = messages.map((m) => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }));
+  const chatMessages = [
+    { role: 'system', content: buildSystemInstruction(profile) },
+    ...messages.map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content })),
+  ];
 
   let upstream;
   try {
-    upstream = await fetch(STREAM_URL, {
+    upstream = await fetch(OPENAI_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents, systemInstruction: buildSystemInstruction(profile) }),
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ model: MODEL, messages: chatMessages, stream: true }),
     });
   } catch (err) {
-    return res.status(502).json({ error: 'Не удалось связаться с Gemini: ' + err.message });
+    return res.status(502).json({ error: 'Не удалось связаться с OpenAI: ' + err.message });
   }
 
   if (!upstream.ok) {
@@ -101,9 +104,10 @@ app.post('/api/chat', async (req, res) => {
         if (!line.startsWith('data:')) continue;
         const payload = line.slice(5).trim();
         if (!payload) continue;
+        if (payload === '[DONE]') continue; // отправим свой [DONE] в конце
         try {
           const parsed = JSON.parse(payload);
-          const text = parsed?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+          const text = parsed?.choices?.[0]?.delta?.content || '';
           if (text) res.write(`data: ${JSON.stringify({ text })}\n\n`);
         } catch {
           // неполный JSON-чанк — пропускаем, дождёмся следующего куска
