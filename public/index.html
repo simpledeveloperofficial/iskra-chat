@@ -83,15 +83,21 @@
     -webkit-font-smoothing: antialiased;
     touch-action: manipulation; /* убирает зум по двойному тапу, пинч-зум остаётся */
     -webkit-text-size-adjust: 100%;
+    overflow: hidden;            /* скроллит внутренний контейнер, а не вся страница */
+    overscroll-behavior: none;   /* без «оттягивания» страницы в приложении */
   }
   button, .suggestion, .chat-item, .new-chat, .account-row {
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
+  /* --app-height задаётся из JS по реальной видимой высоте (VisualViewport),
+     иначе клавиатура телефона перекрывает поле ввода */
   .shell {
-    height: 100dvh;
+    height: var(--app-height, 100dvh);
     display: flex;
     background: var(--bg);
+    overflow: hidden;
   }
 
   /* --- боковая панель --- */
@@ -105,6 +111,8 @@
     overflow: hidden;
   }
   .sidebar.collapsed { margin-left: -268px; }
+  /* на время инициализации — чтобы панель не «промелькнула» при запуске */
+  .sidebar.no-anim { transition: none; }
 
   .sidebar-top { padding: 12px; display: flex; flex-direction: column; gap: 6px; }
 
@@ -169,12 +177,18 @@
     border: none;
     background: transparent;
     color: var(--text-muted);
-    display: none;
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
     align-items: center; justify-content: center;
     cursor: pointer;
   }
-  .chat-item:hover .del { display: flex; }
+  .chat-item:hover .del { opacity: 1; pointer-events: auto; }
   .chat-item .del:hover { background: var(--border); color: var(--danger); }
+  /* на тач-экране ховера не существует — иначе удалить чат было бы невозможно */
+  @media (hover: none) {
+    .chat-item .del { opacity: 0.55; pointer-events: auto; }
+  }
   .chat-item .del svg { width: 13px; height: 13px; }
 
   .sidebar-empty { padding: 10px 8px; color: var(--text-muted); font-size: 12.5px; }
@@ -303,7 +317,8 @@
 
   .msg.assistant .bubble { width: 100%; }
 
-  .bubble { font-size: 15.5px; line-height: 1.7; }
+  /* длинные слова и ссылки иначе распирают экран вбок на телефоне */
+  .bubble { font-size: 15.5px; line-height: 1.7; overflow-wrap: anywhere; min-width: 0; }
   .bubble p { margin: 0 0 14px; }
   .bubble p:last-child { margin-bottom: 0; }
   .bubble ul, .bubble ol { margin: 0 0 14px; padding-left: 22px; }
@@ -409,7 +424,8 @@
 
   /* --- модалка настроек --- */
   .modal-backdrop {
-    position: fixed; inset: 0;
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--app-height, 100dvh);
     background: rgba(10, 11, 14, 0.5);
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
@@ -421,8 +437,9 @@
     border-radius: 18px;
     width: 100%;
     max-width: 440px;
-    max-height: 88vh;
+    max-height: calc(var(--app-height, 100dvh) - 40px);
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 24px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   }
@@ -499,9 +516,79 @@
     z-index: 19;
   }
 
+  /* ---------- мобильная версия ---------- */
   @media (max-width: 760px) {
-    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; z-index: 20;
+      width: min(84vw, 300px);
+      transition: transform 0.2s ease;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    /* сдвигаем трансформом, а не отрицательным margin: ширина здесь резиновая */
+    .sidebar.collapsed { margin-left: 0; transform: translateX(-100%); }
     .sidebar-backdrop.show { display: block; }
+
+    /* зоны нажатия — минимум 44px, как требуют гайдлайны iOS и Android */
+    .icon-btn { width: 44px; height: 44px; }
+    .icon-btn svg { width: 22px; height: 22px; }
+    .new-chat { padding: 13px 14px; font-size: 15px; }
+    .sidebar-search { padding: 11px 12px; }
+    .sidebar-search input { font-size: 16px; }
+    .chat-item { padding: 12px; font-size: 15px; }
+    .chat-item .del { width: 34px; height: 34px; }
+    .chat-item .del svg { width: 16px; height: 16px; }
+    .account-row { padding: 12px 10px; }
+    .account-row .chip { width: 34px; height: 34px; font-size: 14px; }
+    .account-row .who .name { font-size: 15px; }
+
+    .topbar {
+      padding: 8px;
+      padding-top: max(8px, env(safe-area-inset-top));
+      gap: 4px;
+    }
+    .topbar .title { font-size: 16px; }
+
+    main { padding: 0 14px; }
+
+    /* подсказки в одну колонку — в две они на телефоне нечитаемо тесные */
+    .suggestions { grid-template-columns: 1fr; gap: 8px; }
+    .suggestion { padding: 15px 16px; font-size: 15px; }
+    .suggestion .emoji { display: inline; margin: 0 8px 0 0; }
+    .welcome { gap: 20px; padding-bottom: 20px; }
+    .welcome h2 { font-size: 22px; }
+    .welcome .mark-lg { width: 52px; height: 52px; }
+
+    #thread { gap: 20px; padding: 14px 0 18px; }
+    .msg.user .bubble { max-width: 88%; }
+    .bubble { font-size: 16px; }
+
+    .composer-wrap {
+      padding: 6px 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    #form { padding: 8px 8px 8px 16px; border-radius: 24px; }
+    /* 16px обязательно: на меньшем размере iOS сам зумит страницу при фокусе */
+    textarea { font-size: 16px; }
+    button.send { width: 40px; height: 40px; }
+    button.send svg { width: 17px; height: 17px; }
+    .hint { font-size: 11px; margin-top: 7px; }
+
+    .modal-backdrop { padding: 12px; }
+    .modal { padding: 20px 18px; border-radius: 16px; }
+    .field input, .field textarea { font-size: 16px; padding: 12px; }
+    .btn-primary, .btn-ghost { padding: 13px 18px; font-size: 15px; }
+  }
+
+  /* тач-устройства: ховер «залипает» после тапа — заменяем его откликом на нажатие */
+  @media (hover: none) {
+    .new-chat:hover, .chat-item:hover, .account-row:hover,
+    .icon-btn:hover, .suggestion:hover { background: transparent; }
+    .chat-item.active, .chat-item.active:hover { background: var(--bg-elevated); }
+    .new-chat:active, .chat-item:active, .account-row:active,
+    .icon-btn:active, .suggestion:active { background: var(--hover); }
+    button.send:not(:disabled):active { filter: brightness(1.3); }
+    .btn-primary:active { filter: brightness(1.2); }
   }
 </style>
 </head>
@@ -851,10 +938,53 @@
   }
   function closeSidebarOnMobile() { if (isMobile()) setSidebarOpen(false); }
 
-  sidebarToggle.addEventListener('click', () => setSidebarOpen(sidebar.classList.contains('collapsed')));
+  let collapsedByUser = false; // свернул ли пользователь панель сам (на широком экране)
+
+  sidebarToggle.addEventListener('click', () => {
+    const willOpen = sidebar.classList.contains('collapsed');
+    setSidebarOpen(willOpen);
+    if (!isMobile()) collapsedByUser = !willOpen;
+  });
   sidebarBackdrop.addEventListener('click', () => setSidebarOpen(false));
-  window.addEventListener('resize', () => { if (!isMobile()) sidebarBackdrop.classList.remove('show'); });
+
+  // Реагируем только на смену режима узкий/широкий. Просто на resize полагаться
+  // нельзя: на телефоне это событие шлёт и клавиатура — панель закрывалась бы
+  // прямо во время поиска по чатам.
+  let wasMobile = isMobile();
+  window.addEventListener('resize', () => {
+    const nowMobile = isMobile();
+    if (!nowMobile) sidebarBackdrop.classList.remove('show');
+    if (nowMobile === wasMobile) return;
+    wasMobile = nowMobile;
+    setSidebarOpen(nowMobile ? false : !collapsedByUser);
+  });
+
+  sidebar.classList.add('no-anim');
   if (isMobile()) setSidebarOpen(false);
+  requestAnimationFrame(() => requestAnimationFrame(() => sidebar.classList.remove('no-anim')));
+
+  // ---------- Высота экрана с учётом клавиатуры ----------
+  // На телефоне клавиатура «съедает» нижнюю часть экрана, но 100dvh об этом
+  // не знает — поле ввода уезжает под неё. VisualViewport отдаёт реально
+  // видимую высоту, ею и задаём высоту приложения.
+  function syncAppHeight() {
+    const vv = window.visualViewport;
+    const h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--app-height', h + 'px');
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncAppHeight);
+    window.visualViewport.addEventListener('scroll', syncAppHeight);
+  }
+  window.addEventListener('resize', syncAppHeight);
+  window.addEventListener('orientationchange', () => setTimeout(syncAppHeight, 250));
+  syncAppHeight();
+
+  // клавиатура открывается не мгновенно — досчитываем высоту и прокручиваем
+  // переписку вниз, чтобы последнее сообщение и поле ввода остались видны
+  input.addEventListener('focus', () => {
+    setTimeout(() => { syncAppHeight(); scrollDown(); }, 250);
+  });
 
   refreshChrome();
   renderSidebar();
